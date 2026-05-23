@@ -1,0 +1,528 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="龟背竹日记">
+<meta name="theme-color" content="#0f1f12">
+<title>龟背竹养护日记</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; margin: 0; padding: 0; }
+  ::-webkit-scrollbar { display: none; }
+  body {
+    min-height: 100vh;
+    background: linear-gradient(160deg, #0f1f12 0%, #1a2e1c 50%, #0d1a0e 100%);
+    font-family: 'Noto Serif SC', serif;
+    color: #e8f0e9;
+    padding-bottom: 80px;
+  }
+  button { font-family: 'Noto Serif SC', serif; }
+  textarea { font-family: 'Noto Serif SC', serif; }
+  @keyframes fadeIn { from { opacity:0; transform:translateY(-8px); } to { opacity:1; transform:translateY(0); } }
+  @keyframes slideUp { from { transform:translateY(100%); } to { transform:translateY(0); } }
+
+  .bg-texture {
+    position: fixed; inset: 0; pointer-events: none;
+    background-image:
+      radial-gradient(circle at 20% 20%, rgba(90,170,110,0.07) 0%, transparent 50%),
+      radial-gradient(circle at 80% 80%, rgba(74,158,218,0.05) 0%, transparent 50%);
+    z-index: 0;
+  }
+
+  /* Header */
+  .header {
+    position: relative; z-index: 1;
+    padding: 52px 24px 24px;
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+  }
+  .header-top { display:flex; align-items:flex-end; justify-content:space-between; }
+  .header-sub { font-size:11px; letter-spacing:4px; color:#7aaa88; text-transform:uppercase; margin-bottom:6px; }
+  .header-title { font-size:28px; font-weight:700; color:#d4ecd8; line-height:1.2; }
+  .header-sub2 { font-size:16px; font-weight:400; color:#8ab894; }
+  .header-emoji { font-size:52px; filter:drop-shadow(0 4px 12px rgba(90,170,110,0.3)); }
+  .status-grid { margin-top:20px; display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+  .status-card {
+    background:rgba(255,255,255,0.05); border-radius:14px; padding:14px 16px;
+    border:1px solid rgba(255,255,255,0.08);
+  }
+  .status-label { font-size:11px; color:#7aaa88; margin-bottom:6px; letter-spacing:1px; }
+
+  /* Tab bar */
+  .tabbar {
+    display:flex; border-bottom:1px solid rgba(255,255,255,0.08);
+    position:sticky; top:0; z-index:10;
+    background:rgba(13,26,14,0.92); backdrop-filter:blur(12px);
+  }
+  .tab-btn {
+    flex:1; padding:14px 0; background:none; border:none;
+    color:#5a7a5c; font-size:14px; cursor:pointer;
+    border-bottom:2px solid transparent; transition:all 0.2s;
+  }
+  .tab-btn.active { color:#7dd888; border-bottom:2px solid #7dd888; }
+
+  /* Content */
+  .content { position:relative; z-index:1; padding:0 20px; }
+  .section-label { padding:24px 0 12px; font-size:13px; color:#7aaa88; letter-spacing:1px; }
+
+  /* Profile card */
+  .profile-card {
+    background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.08);
+    border-radius:18px; padding:20px;
+  }
+  .profile-row {
+    display:flex; justify-content:space-between; align-items:center;
+    padding:9px 0; border-bottom:1px solid rgba(255,255,255,0.05);
+  }
+  .profile-key { font-size:13px; color:#7aaa88; }
+  .profile-val { font-size:13px; color:#cde8d0; font-weight:500; }
+
+  /* Diag items */
+  .diag-item {
+    display:flex; align-items:flex-start; gap:10px; margin-bottom:10px;
+    border-radius:12px; padding:12px 14px;
+  }
+  .diag-item span { font-size:13px; line-height:1.5; color:#cde8d0; }
+
+  /* Log items */
+  .log-item {
+    background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.07);
+    border-radius:14px; padding:16px; margin-bottom:12px;
+  }
+  .log-header { display:flex; justify-content:space-between; align-items:flex-start; }
+  .log-inner { display:flex; align-items:center; gap:10px; }
+  .log-emoji { font-size:22px; }
+  .log-type { font-size:14px; font-weight:700; color:#d4ecd8; }
+  .log-date { font-size:11px; color:#5a7a5c; margin-top:2px; }
+  .log-del { background:none; border:none; color:#5a7a5c; font-size:16px; cursor:pointer; padding:4px; }
+  .tag-row { display:flex; flex-wrap:wrap; gap:6px; margin-top:10px; }
+  .tag { background:rgba(255,255,255,0.07); border-radius:8px; padding:3px 10px; font-size:11px; color:#8ab894; }
+  .log-note {
+    margin-top:10px; padding:10px 12px;
+    background:rgba(255,255,255,0.04); border-radius:8px;
+    font-size:13px; color:#a0c8a6; line-height:1.6;
+  }
+
+  /* Filter bar */
+  .filter-bar { overflow-x:auto; display:flex; gap:8px; padding:20px 0 12px; scrollbar-width:none; }
+  .filter-btn {
+    flex-shrink:0; padding:7px 14px; border-radius:20px; border:none;
+    color:#7aaa88; font-size:13px; cursor:pointer;
+    background:rgba(255,255,255,0.07);
+  }
+  .filter-btn.active { color:#fff; }
+
+  /* Tips */
+  .tip-card {
+    background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.07);
+    border-radius:16px; padding:18px; margin-bottom:12px;
+  }
+  .tip-head { display:flex; align-items:center; gap:10px; margin-bottom:10px; }
+  .tip-title { font-size:15px; font-weight:700; color:#d4ecd8; }
+  .tip-body { font-size:13px; color:#a0c8a6; line-height:1.8; }
+  .tip-special {
+    background:linear-gradient(135deg, rgba(90,170,110,0.12), rgba(74,158,218,0.08));
+    border:1px solid rgba(90,170,110,0.25);
+    border-radius:16px; padding:18px; margin-top:8px;
+  }
+  .tip-special-title { font-size:14px; font-weight:700; color:#7dd888; margin-bottom:10px; }
+  .tip-special-body { font-size:13px; color:#a0c8a6; line-height:2; }
+
+  /* Empty state */
+  .empty { text-align:center; padding:60px 0; color:#5a7a5c; }
+  .empty-icon { font-size:40px; margin-bottom:12px; }
+  .empty-text { font-size:14px; }
+
+  /* FAB */
+  .fab {
+    position:fixed; bottom:100px; right:24px; z-index:100;
+    width:56px; height:56px; border-radius:50%;
+    background:linear-gradient(135deg, #5aaa6e, #3d8a50);
+    border:none; color:#fff; font-size:28px; cursor:pointer;
+    box-shadow:0 4px 20px rgba(90,170,110,0.4);
+    display:flex; align-items:center; justify-content:center;
+  }
+
+  /* Bottom nav */
+  .bottom-nav {
+    position:fixed; bottom:0; left:0; right:0;
+    background:rgba(10,20,11,0.95); backdrop-filter:blur(16px);
+    border-top:1px solid rgba(255,255,255,0.08);
+    display:flex; z-index:50;
+    padding-bottom:env(safe-area-inset-bottom);
+  }
+  .nav-btn {
+    flex:1; padding:12px 0; background:none; border:none;
+    color:#4a6a4c; font-size:11px; cursor:pointer;
+    display:flex; flex-direction:column; align-items:center; gap:2px;
+  }
+  .nav-btn.active { color:#7dd888; }
+  .nav-icon { font-size:20px; }
+
+  /* Modal */
+  .modal-overlay {
+    position:fixed; inset:0; background:rgba(0,0,0,0.7); z-index:200;
+    display:flex; align-items:flex-end;
+  }
+  .modal {
+    width:100%; background:#111e12;
+    border-radius:24px 24px 0 0;
+    border:1px solid rgba(255,255,255,0.1);
+    padding:24px 20px 40px;
+    max-height:85vh; overflow-y:auto;
+    animation: slideUp 0.3s ease;
+  }
+  .modal-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; }
+  .modal-title { color:#d4ecd8; font-size:18px; font-weight:700; }
+  .modal-close { background:none; border:none; color:#7aaa88; font-size:20px; cursor:pointer; }
+  .modal-section-label { font-size:12px; color:#7aaa88; margin-bottom:10px; }
+  .type-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:8px; margin-bottom:20px; }
+  .type-btn {
+    padding:12px 4px; border-radius:12px; border:none; cursor:pointer;
+    color:#7aaa88; font-size:11px;
+    background:rgba(255,255,255,0.06);
+    display:flex; flex-direction:column; align-items:center; gap:4px;
+    transition:all 0.15s;
+  }
+  .type-btn.active { color:#fff; }
+  .type-icon { font-size:20px; }
+  .tags-wrap { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:20px; }
+  .htag-btn {
+    padding:7px 14px; border-radius:20px; border:1px solid transparent; cursor:pointer;
+    background:rgba(255,255,255,0.06); color:#5a7a5c; font-size:12px;
+  }
+  .htag-btn.active { background:rgba(90,170,110,0.3); color:#7dd888; border-color:rgba(90,170,110,0.5); }
+  .note-area {
+    width:100%; background:rgba(255,255,255,0.05);
+    border:1px solid rgba(255,255,255,0.1); border-radius:12px;
+    color:#d4ecd8; font-size:13px;
+    padding:12px; resize:none; outline:none;
+    margin-bottom:24px;
+  }
+  .save-btn {
+    width:100%; padding:16px; border-radius:14px; border:none;
+    color:#fff; font-size:15px; font-weight:700; cursor:pointer; letter-spacing:1px;
+  }
+
+  /* Toast */
+  .toast {
+    position:fixed; top:24px; left:50%; transform:translateX(-50%);
+    background:rgba(90,170,110,0.95); color:#fff; border-radius:20px;
+    padding:10px 24px; font-size:14px; font-weight:600; z-index:9999;
+    box-shadow:0 4px 20px rgba(0,0,0,0.3);
+    animation:fadeIn 0.2s ease;
+  }
+
+  /* Badge */
+  .badge-good { background:#e8f7eb; color:#5aaa6e; border-radius:8px; padding:2px 8px; font-size:12px; font-weight:600; }
+  .badge-warn { background:#fdf3e3; color:#e8a838; border-radius:8px; padding:2px 8px; font-size:12px; font-weight:600; }
+  .badge-bad  { background:#fceae6; color:#c0614a; border-radius:8px; padding:2px 8px; font-size:12px; font-weight:600; }
+  .badge-none { color:#aaa; font-size:12px; }
+</style>
+</head>
+<body>
+
+<div class="bg-texture"></div>
+
+<div id="toast" class="toast" style="display:none"></div>
+
+<!-- Header -->
+<div class="header">
+  <div class="header-top">
+    <div>
+      <div class="header-sub">Monstera Deliciosa</div>
+      <div class="header-title">龟背竹<br><span class="header-sub2">养护日记</span></div>
+    </div>
+    <div class="header-emoji">🌿</div>
+  </div>
+  <div class="status-grid">
+    <div class="status-card">
+      <div class="status-label">上次浇水</div>
+      <div id="water-status"></div>
+    </div>
+    <div class="status-card">
+      <div class="status-label">上次施肥</div>
+      <div id="fert-status"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Tab bar -->
+<div class="tabbar">
+  <button class="tab-btn active" onclick="switchTab('home')">首页</button>
+  <button class="tab-btn" onclick="switchTab('log')">记录</button>
+  <button class="tab-btn" onclick="switchTab('tips')">养护指南</button>
+</div>
+
+<!-- Content -->
+<div class="content">
+
+  <!-- HOME -->
+  <div id="tab-home">
+    <div class="section-label">🪴 我的植株概况</div>
+    <div class="profile-card">
+      <div class="profile-row"><span class="profile-key">品种</span><span class="profile-val">龟背竹 Monstera deliciosa</span></div>
+      <div class="profile-row"><span class="profile-key">规格</span><span class="profile-val">大株（6截以上）</span></div>
+      <div class="profile-row"><span class="profile-key">位置</span><span class="profile-val">室内靠窗，散射光</span></div>
+      <div class="profile-row"><span class="profile-key">地区</span><span class="profile-val">西南 / 华中</span></div>
+      <div class="profile-row"><span class="profile-key">浇水</span><span class="profile-val">干透浇透</span></div>
+      <div class="profile-row" style="border:none"><span class="profile-key">施肥</span><span class="profile-val">待加强（目前少肥）</span></div>
+    </div>
+
+    <div class="section-label">🔍 初次诊断</div>
+    <div class="diag-item" style="background:rgba(90,170,110,0.08);border:1px solid rgba(90,170,110,0.2)">
+      <span style="font-size:16px;flex-shrink:0">✅</span><span>叶色深绿有光泽，整体健康状态良好</span>
+    </div>
+    <div class="diag-item" style="background:rgba(90,170,110,0.08);border:1px solid rgba(90,170,110,0.2)">
+      <span style="font-size:16px;flex-shrink:0">✅</span><span>开裂良好，说明散射光充足</span>
+    </div>
+    <div class="diag-item" style="background:rgba(90,170,110,0.08);border:1px solid rgba(90,170,110,0.2)">
+      <span style="font-size:16px;flex-shrink:0">✅</span><span>有新芽萌发，生长态势积极</span>
+    </div>
+    <div class="diag-item" style="background:rgba(232,168,56,0.08);border:1px solid rgba(232,168,56,0.2)">
+      <span style="font-size:16px;flex-shrink:0">⚠️</span><span>部分叶片轻微趋光弯曲，建议每两周转盆 90°</span>
+    </div>
+    <div class="diag-item" style="background:rgba(232,168,56,0.08);border:1px solid rgba(232,168,56,0.2)">
+      <span style="font-size:16px;flex-shrink:0">⚠️</span><span>土表偏干板结，浇水后可用筷子轻轻松土</span>
+    </div>
+    <div class="diag-item" style="background:rgba(192,97,74,0.08);border:1px solid rgba(192,97,74,0.2)">
+      <span style="font-size:16px;flex-shrink:0">❗</span><span>长期少肥，土壤营养已消耗，建议开始补肥</span>
+    </div>
+
+    <div class="section-label" id="recent-label" style="display:none">📋 最近记录</div>
+    <div id="recent-logs"></div>
+  </div>
+
+  <!-- LOG -->
+  <div id="tab-log" style="display:none">
+    <div class="filter-bar" id="filter-bar"></div>
+    <div id="log-list"></div>
+  </div>
+
+  <!-- TIPS -->
+  <div id="tab-tips" style="display:none">
+    <div class="section-label">📚 龟背竹养护要点</div>
+    <div class="tip-card"><div class="tip-head"><span style="font-size:22px">💧</span><span class="tip-title">浇水原则</span></div><p class="tip-body">干透浇透，切忌积水。春夏每7-10天，冬季延长至14-20天。盆底无积水为准。</p></div>
+    <div class="tip-card"><div class="tip-head"><span style="font-size:22px">🌱</span><span class="tip-title">施肥建议</span></div><p class="tip-body">生长季（3-9月）每月施一次缓释肥或稀释10倍液肥，冬季停肥休眠。</p></div>
+    <div class="tip-card"><div class="tip-head"><span style="font-size:22px">☀️</span><span class="tip-title">光照需求</span></div><p class="tip-body">明亮散射光最佳，避免阳光直晒。光线不足叶片变小、裂口减少甚至不开裂。</p></div>
+    <div class="tip-card"><div class="tip-head"><span style="font-size:22px">🌡️</span><span class="tip-title">温度管理</span></div><p class="tip-body">适宜15-30℃，低于10℃停止生长，5℃以下有冻害风险。避免冷风直吹。</p></div>
+    <div class="tip-card"><div class="tip-head"><span style="font-size:22px">✨</span><span class="tip-title">叶片护理</span></div><p class="tip-body">每月用湿布轻擦叶面，去除灰尘，保持气孔通畅，叶片更有光泽。</p></div>
+    <div class="tip-card"><div class="tip-head"><span style="font-size:22px">🌿</span><span class="tip-title">气根处理</span></div><p class="tip-body">气根可引导入土增加营养吸收，也可绑苔藓柱辅助攀附，让植株更直立壮实。</p></div>
+    <div class="tip-special">
+      <div class="tip-special-title">🎯 针对你的专属建议</div>
+      <div class="tip-special-body">
+        • 立刻开始施肥：缓释肥（奥绿/魔肥）或稀释液肥，每月一次<br>
+        • 每隔两周顺时针转盆90°，解决趋光弯曲问题<br>
+        • 将竹签支撑换成苔藓柱，让气根攀附，株型更优美<br>
+        • 窗边散射光很合适，夏季注意避开正午强光直晒<br>
+        • 浇水后用筷子轻戳土面，改善板结促进透气
+      </div>
+    </div>
+    <div style="height:20px"></div>
+  </div>
+
+</div>
+
+<!-- FAB -->
+<button class="fab" onclick="openModal()">+</button>
+
+<!-- Bottom nav -->
+<div class="bottom-nav">
+  <button class="nav-btn active" onclick="switchTab('home')"><span class="nav-icon">🏡</span>首页</button>
+  <button class="nav-btn" onclick="switchTab('log')"><span class="nav-icon">📋</span>记录</button>
+  <button class="nav-btn" onclick="switchTab('tips')"><span class="nav-icon">📚</span>指南</button>
+</div>
+
+<!-- Modal -->
+<div id="modal" class="modal-overlay" style="display:none" onclick="overlayClose(event)">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title">新增养护记录</span>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal-section-label">养护类型</div>
+    <div class="type-grid" id="type-grid"></div>
+    <div class="modal-section-label">植株状态标签（可多选）</div>
+    <div class="tags-wrap" id="tags-wrap"></div>
+    <div class="modal-section-label">备注（可选）</div>
+    <textarea class="note-area" id="note-input" rows="3" placeholder="记录今天的观察，比如：发现新芽、土壤状态、叶片变化..."></textarea>
+    <button class="save-btn" id="save-btn" onclick="saveLog()">保存记录</button>
+  </div>
+</div>
+
+<script>
+const CARE_TYPES = [
+  { id:"water",     label:"浇水",   emoji:"💧", color:"#4a9eda" },
+  { id:"fertilize", label:"施肥",   emoji:"🌱", color:"#5aaa6e" },
+  { id:"wipe",      label:"擦叶",   emoji:"✨", color:"#9b7fd4" },
+  { id:"rotate",    label:"转盆",   emoji:"🔄", color:"#e8a838" },
+  { id:"repot",     label:"换盆",   emoji:"🪴", color:"#c0614a" },
+  { id:"loosen",    label:"松土",   emoji:"🌍", color:"#8a7560" },
+  { id:"note",      label:"观察记录", emoji:"📝", color:"#6b8ea8" },
+];
+const HEALTH_TAGS = ["叶色正常","有新芽","叶片卷曲","下叶泛黄","褐色斑点","土壤过干","盆土板结","气根旺盛"];
+const STORAGE_KEY = "monstera_care_log_v2";
+
+let logs = [];
+let currentTab = "home";
+let filterType = "all";
+let selectedType = "water";
+let selectedTags = [];
+
+// Load
+try { const s = localStorage.getItem(STORAGE_KEY); if(s) logs = JSON.parse(s); } catch(e){}
+
+function save() { try { localStorage.setItem(STORAGE_KEY, JSON.stringify(logs)); } catch(e){} }
+
+function fmt(iso) {
+  const d = new Date(iso), now = new Date();
+  const diff = Math.floor((now-d)/86400000);
+  const time = d.toLocaleTimeString("zh-CN",{hour:"2-digit",minute:"2-digit"});
+  const date = d.toLocaleDateString("zh-CN",{month:"short",day:"numeric"});
+  if(diff===0) return "今天 "+time;
+  if(diff===1) return "昨天 "+time;
+  return date+" "+time;
+}
+
+function daysSince(typeId) {
+  const last = logs.filter(l=>l.type===typeId).sort((a,b)=>new Date(b.date)-new Date(a.date))[0];
+  if(!last) return null;
+  return Math.floor((new Date()-new Date(last.date))/86400000);
+}
+
+function badgeHTML(days, warnAfter, urgentAfter) {
+  if(days===null) return '<span class="badge-none">尚未记录</span>';
+  if(days<=warnAfter) return `<span class="badge-good">${days===0?"今天":days+"天前"} ✓</span>`;
+  if(days<=urgentAfter) return `<span class="badge-warn">${days}天前 ⚠️</span>`;
+  return `<span class="badge-bad">${days}天前 !</span>`;
+}
+
+function showToast(msg) {
+  const t = document.getElementById("toast");
+  t.textContent = msg; t.style.display = "block";
+  setTimeout(()=>t.style.display="none", 2000);
+}
+
+function switchTab(tab) {
+  currentTab = tab;
+  ["home","log","tips"].forEach(t => {
+    document.getElementById("tab-"+t).style.display = t===tab?"block":"none";
+    const btns = document.querySelectorAll(".tab-btn");
+    const navs = document.querySelectorAll(".nav-btn");
+    const idx = ["home","log","tips"].indexOf(t);
+    btns[idx].classList.toggle("active", t===tab);
+    navs[idx].classList.toggle("active", t===tab);
+  });
+  if(tab==="log") renderLog();
+  if(tab==="home") renderHome();
+}
+
+function renderHome() {
+  document.getElementById("water-status").innerHTML = badgeHTML(daysSince("water"),7,14);
+  document.getElementById("fert-status").innerHTML = badgeHTML(daysSince("fertilize"),14,30);
+  const recent = logs.slice(0,3);
+  document.getElementById("recent-label").style.display = recent.length?"block":"none";
+  document.getElementById("recent-logs").innerHTML = recent.map(log => {
+    const ct = CARE_TYPES.find(c=>c.id===log.type);
+    return `<div class="log-item" style="border-left:3px solid ${ct.color}">
+      <div class="log-header">
+        <div class="log-inner">
+          <span class="log-emoji">${ct.emoji}</span>
+          <div><div class="log-type">${ct.label}</div><div class="log-date">${fmt(log.date)}</div></div>
+        </div>
+      </div>
+      ${log.note?`<div class="log-note">${log.note}</div>`:""}
+    </div>`;
+  }).join("");
+}
+
+function renderLog() {
+  // Filter bar
+  const fb = document.getElementById("filter-bar");
+  fb.innerHTML = `<button class="filter-btn${filterType==="all"?" active":""}" style="${filterType==="all"?"background:#5aaa6e;color:#fff":""}" onclick="setFilter('all')">全部</button>`
+    + CARE_TYPES.map(ct=>`<button class="filter-btn${filterType===ct.id?" active":""}" style="${filterType===ct.id?`background:${ct.color};color:#fff`:""}" onclick="setFilter('${ct.id}')">${ct.emoji} ${ct.label}</button>`).join("");
+
+  const filtered = filterType==="all" ? logs : logs.filter(l=>l.type===filterType);
+  const ll = document.getElementById("log-list");
+  if(!filtered.length) {
+    ll.innerHTML = `<div class="empty"><div class="empty-icon">🌱</div><div class="empty-text">还没有记录，点击 + 开始养护日记吧</div></div>`;
+    return;
+  }
+  ll.innerHTML = filtered.map(log => {
+    const ct = CARE_TYPES.find(c=>c.id===log.type);
+    return `<div class="log-item" style="border-left:3px solid ${ct.color}">
+      <div class="log-header">
+        <div class="log-inner">
+          <span class="log-emoji">${ct.emoji}</span>
+          <div><div class="log-type">${ct.label}</div><div class="log-date">${fmt(log.date)}</div></div>
+        </div>
+        <button class="log-del" onclick="delLog(${log.id})">🗑</button>
+      </div>
+      ${log.tags&&log.tags.length?`<div class="tag-row">${log.tags.map(t=>`<span class="tag">${t}</span>`).join("")}</div>`:""}
+      ${log.note?`<div class="log-note">${log.note}</div>`:""}
+    </div>`;
+  }).join("");
+}
+
+function setFilter(type) {
+  filterType = type;
+  renderLog();
+}
+
+function delLog(id) {
+  logs = logs.filter(l=>l.id!==id);
+  save(); renderLog(); renderHome();
+  showToast("已删除");
+}
+
+function openModal() {
+  selectedType = "water"; selectedTags = [];
+  document.getElementById("note-input").value = "";
+  buildTypeGrid(); buildTags(); updateSaveBtn();
+  document.getElementById("modal").style.display = "flex";
+}
+function closeModal() { document.getElementById("modal").style.display = "none"; }
+function overlayClose(e) { if(e.target===e.currentTarget) closeModal(); }
+
+function buildTypeGrid() {
+  document.getElementById("type-grid").innerHTML = CARE_TYPES.map(ct =>
+    `<button class="type-btn${selectedType===ct.id?" active":""}" style="${selectedType===ct.id?`background:${ct.color}`:""}" onclick="selectType('${ct.id}')">
+      <span class="type-icon">${ct.emoji}</span>${ct.label}
+    </button>`
+  ).join("");
+}
+
+function buildTags() {
+  document.getElementById("tags-wrap").innerHTML = HEALTH_TAGS.map(tag =>
+    `<button class="htag-btn${selectedTags.includes(tag)?" active":""}" onclick="toggleTag('${tag}')">${tag}</button>`
+  ).join("");
+}
+
+function selectType(id) { selectedType = id; buildTypeGrid(); updateSaveBtn(); }
+function toggleTag(tag) {
+  selectedTags = selectedTags.includes(tag) ? selectedTags.filter(t=>t!==tag) : [...selectedTags,tag];
+  buildTags();
+}
+function updateSaveBtn() {
+  const ct = CARE_TYPES.find(c=>c.id===selectedType);
+  const btn = document.getElementById("save-btn");
+  btn.style.background = `linear-gradient(135deg, ${ct.color}, ${ct.color}cc)`;
+  btn.textContent = ct.emoji+" 保存记录";
+}
+
+function saveLog() {
+  const note = document.getElementById("note-input").value.trim();
+  logs.unshift({ id:Date.now(), date:new Date().toISOString(), type:selectedType, tags:[...selectedTags], note });
+  save(); closeModal(); renderHome();
+  if(currentTab==="log") renderLog();
+  showToast("记录成功 🌿");
+}
+
+// Init
+renderHome();
+</script>
+</body>
+</html>
